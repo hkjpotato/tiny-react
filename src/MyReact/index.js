@@ -45,6 +45,11 @@ function render(element, container) {
  * || \\
  * d=e=f
  * 
+ * once you know we need this fiber structure (yeah we know in advance), 
+ * the tricky part is how to build it while traversing the tree
+ * 
+ * so .. we can base on an existing vDom tree structure, build the next function for traversing it
+ * the fiber structure is build in time
  * 
  * **/
 
@@ -64,7 +69,64 @@ a.child = b;
 b.sibling = c; c.parent = a;
 b.child = d; d.sibling = e; e.sibling = f; f.parent = b;
 
+// assume we dont have fiber at first
+function Node(val) {
+    this.val = val;
+    this.children = [];
+}
+
+const aN = new Node('a');
+const bN = new Node('b');
+const cN = new Node('c');
+const dN = new Node('d');
+const eN = new Node('e');
+const fN = new Node('f');
+aN.children = [bN, cN];
+bN.children = [dN, eN, fN];
+
+
+const rootFiber = {
+    node: aN,
+    child: null,
+    sibling: null,
+    parent: null,
+}
+
+
+// only deal with first level of children
+const dealWithChildren = (rootFiber) => {
+    if (rootFiber.node.children.length !== 0) {
+        const getChildFiberTemplate = (node) => {
+            return {
+                parent: rootFiber, // known parent
+                sibling: null,
+                child: null,
+                node, 
+            }
+        };
+
+        const children = rootFiber.node.children;
+
+        let prevSibling = getChildFiberTemplate(children[0]);
+        rootFiber.child = prevSibling;
+
+        for (var i = 1; i < children.length; i++) {
+            const curr = getChildFiberTemplate(children[i]);
+            prevSibling.sibling = curr;
+            prevSibling = curr;
+        }
+    }
+}
+
 function getNext(fiber) {
+    // we need to do sth before get to next
+    // what do we want to do?
+    // lets first try to build the next fiber while..traversing the tree
+    // what is the tree? what is we are trying to build incrementally?
+    // at this moment, tree is the vDom which we probably immediate have snap1, snap2
+    // we are trying build the diff incrementally? I might be wrong..or I might be right
+    dealWithChildren(fiber);
+
     // try look down
     if (fiber.child) {
         return fiber.child;
