@@ -36,7 +36,7 @@ function render(element, container) {
  * we need some kind of visitor pattern
  * 
  * 
- * let's first make an iteractor for a fiber structure
+ * [1]let's first make an iteractor for a fiber structure
  * a fiber should be at least like { parent, child, sibling }
  * 
  *  a
@@ -45,14 +45,28 @@ function render(element, container) {
  * || \\
  * d=e=f
  * 
- * once you know we need this fiber structure (yeah we know in advance), 
+ * [2]once you know we need this fiber structure (yeah we know in advance), 
  * the tricky part is how to build it while traversing the tree
  * 
  * so .. we can base on an existing vDom tree structure, build the next function for traversing it
  * the fiber structure is build in time
  * 
+ * 
+ * [3]about the real dom
+ * ok now ..when to render it? we know we can call ReactDOM.render to trigger a real dom render
+ * but what exactly does it do? Now in the render function we simply do: 
+ * 1. create dom node with given vDom
+ * 2. and append it to container
+ * 
+ * we probably want to change our mindset here:
+ * we already know how to traverse the vdom tree incrementally, once it is done
+ * we should get a queue of dom action, and we then will commit it
+ * maybe..we should store the dom action directly with the fiber? after all fiber ..is a storage?
+ * 
+ * [4] OperationFiber
  * **/
 
+// [1]
 function Fiber(val) {
     this.val = val;
     this.parent = this.child = this.sibling = null;
@@ -92,7 +106,7 @@ const rootFiber = {
     parent: null,
 }
 
-
+// [2]
 // only deal with first level of children
 const dealWithChildren = (rootFiber) => {
     if (rootFiber.node.children.length !== 0) {
@@ -144,16 +158,55 @@ function getNext(fiber) {
     }
 }
 
+/**
+ * thoughts of commit
+ * 
+ * <div>
+ *   <ol>
+ *     <li></li>
+ *     <li></li>
+ *   </ol>
+ *   <span></span>
+ * </div>
+ * 
+ * 
+ * 
+ */
+// use it to represent dom action
+function OperationFiber(type) {
+    this.type = type;
+    this.child = this.parent = this.sibling = null;
+}
 
+function commitToDom(OperationFiber) {
+    const { type } = OperationFiber;
+    const dom = document.createElement(type);
+    let next = OperationFiber.child;
+    while (next) {
+        const childDom = commitToDom(next);
+        dom.appendChild(childDom);
+        next = next.sibling; 
+    }
+    return dom;
+}
 
+const rootOperationFiber = new OperationFiber('div');
+rootOperationFiber.child = new OperationFiber('ol');
+rootOperationFiber.child.sibling = new OperationFiber('span');
+rootOperationFiber.child.child = new OperationFiber('li');
+rootOperationFiber.child.child.sibling = new OperationFiber('li');
 
+const renderOperationFiber = (vdom, container) => {
+    const newDom = commitToDom(rootOperationFiber);
+    container.appendChild(newDom);
+}
 
 const React = {
     createElement,
 }
 
 const ReactDOM = {
-    render,
+    render: renderOperationFiber,
 }
 export {
     React,
