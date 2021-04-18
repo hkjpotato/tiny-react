@@ -8,7 +8,7 @@
  */
 function createElement(type, props, ...children) {
     return {
-        type: 'div',
+        type,
         props: {
             ...props,
             children,
@@ -64,6 +64,13 @@ function render(element, container) {
  * maybe..we should store the dom action directly with the fiber? after all fiber ..is a storage?
  * 
  * [4] OperationFiber
+ * so..what is the relationship between operation and fiber? and still..how the render/commitToDom is triggered?
+ * 
+ * let's say we forget about the timing or operation, forget about requestIdlexx or setTimeout
+ * let's say the getNext and commitToDom will only be triggered manually by you, not the browser
+ * basically, we dont want a work scheduling running, we schedule the work manually
+ * 
+ * and lets assume the fiber is the operationFiber itself, with "node" only available as operation info
  * **/
 
 // [1]
@@ -109,7 +116,7 @@ const rootFiber = {
 // [2]
 // only deal with first level of children
 const dealWithChildren = (rootFiber) => {
-    if (rootFiber.node.children.length !== 0) {
+    if (rootFiber.node.props.children.length !== 0) {
         const getChildFiberTemplate = (node) => {
             return {
                 parent: rootFiber, // known parent
@@ -119,7 +126,7 @@ const dealWithChildren = (rootFiber) => {
             }
         };
 
-        const children = rootFiber.node.children;
+        const children = rootFiber.node.props.children;
 
         let prevSibling = getChildFiberTemplate(children[0]);
         rootFiber.child = prevSibling;
@@ -173,14 +180,14 @@ function getNext(fiber) {
  * 
  */
 // use it to represent dom action
-function OperationFiber(type) {
-    this.type = type;
-    this.child = this.parent = this.sibling = null;
-}
+// function OperationFiber(type) {
+//     this.type = type;
+//     this.child = this.parent = this.sibling = null;
+// }
 
 function commitToDom(OperationFiber) {
-    const { type } = OperationFiber;
-    const dom = document.createElement(type);
+    const { node } = OperationFiber;
+    const dom = document.createElement(node.type);
     let next = OperationFiber.child;
     while (next) {
         const childDom = commitToDom(next);
@@ -190,23 +197,35 @@ function commitToDom(OperationFiber) {
     return dom;
 }
 
-const rootOperationFiber = new OperationFiber('div');
-rootOperationFiber.child = new OperationFiber('ol');
-rootOperationFiber.child.sibling = new OperationFiber('span');
-rootOperationFiber.child.child = new OperationFiber('li');
-rootOperationFiber.child.child.sibling = new OperationFiber('li');
+// const rootOperationFiber = new OperationFiber('div');
+// rootOperationFiber.child = new OperationFiber('ol');
+// rootOperationFiber.child.sibling = new OperationFiber('span');
+// rootOperationFiber.child.child = new OperationFiber('li');
+// rootOperationFiber.child.child.sibling = new OperationFiber('li');
 
-const renderOperationFiber = (vdom, container) => {
-    const newDom = commitToDom(rootOperationFiber);
-    container.appendChild(newDom);
-}
+// const renderOperationFiber = (vdom, container) => {
+//     const newDom = commitToDom(rootOperationFiber);
+//     container.appendChild(newDom);
+// }
 
 const React = {
     createElement,
 }
 
 const ReactDOM = {
-    render: renderOperationFiber,
+    render: (vdom, container) => {
+        // two manual methods for you to play around
+        window.rootFiber = {
+            node: vdom,
+            child: null,
+            sibling: null,
+            parent: null,
+        };
+        window.nextWork = getNext;
+        window.commitToDom = () => {
+            container.appendChild(commitToDom(window.rootFiber));
+        };
+    },
 }
 export {
     React,
