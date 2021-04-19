@@ -61,16 +61,27 @@ function render(element, container) {
  * we probably want to change our mindset here:
  * we already know how to traverse the vdom tree incrementally, once it is done
  * we should get a queue of dom action, and we then will commit it
- * maybe..we should store the dom action directly with the fiber? after all fiber ..is a storage?
+ * maybe..we should store the dom action directly with the fiber? after all fiber ..is a storage for dom action?
  * 
  * [4] OperationFiber
- * so..what is the relationship between operation and fiber? and still..how the render/commitToDom is triggered?
+ * so..what is the relationship between operation and fiber? and still..how the render/contaier.append( is triggered?
  * 
  * let's say we forget about the timing or operation, forget about requestIdlexx or setTimeout
- * let's say the getNext and commitToDom will only be triggered manually by you, not the browser
+ * let's say the getNext and contaier.append( will only be triggered manually by you, not the browser
  * basically, we dont want a work scheduling running, we schedule the work manually
  * 
  * and lets assume the fiber is the operationFiber itself, with "node" only available as operation info
+ * 
+ * [5] we probably want to keep a pointer to the current wip filber
+ * when it is not null, worker should work on it, when it is none, time to commit
+ * 
+ * so perhaps, render, and setState..is just to assign value to it. wow!
+ * 
+ * let's think for a simpler case: we are just updating downwards: wip = currentFiber and then commitToDom from currentFiber
+ * 
+ * now the question is:...how the state is related to the fiber, how we know which dom is bound to a fiber? 
+ * it seems the first is how to deal with functional component
+ * 
  * **/
 
 // [1]
@@ -106,7 +117,7 @@ aN.children = [bN, cN];
 bN.children = [dN, eN, fN];
 
 
-const rootFiber = {
+const _rootFiber = {
     node: aN,
     child: null,
     sibling: null,
@@ -117,13 +128,24 @@ const rootFiber = {
 // only deal with first level of children
 const dealWithChildren = (rootFiber) => {
     if (rootFiber.node.props.children.length !== 0) {
+        // fiber generator
         const getChildFiberTemplate = (node) => {
-            return {
+            const newFiber = {
                 parent: rootFiber, // known parent
                 sibling: null,
                 child: null,
                 node, 
-            }
+            };
+
+            // fake setState as I dont know how to link state to fiber yet, I just attach it
+            newFiber.setState = () => {
+                // update the root for later dom commit
+                window.currRootFiber = newFiber;
+                // prepare for fiber parsing
+                window.wip = newFiber
+            };
+
+            return newFiber;
         };
 
         const children = rootFiber.node.props.children;
@@ -140,6 +162,7 @@ const dealWithChildren = (rootFiber) => {
 }
 
 function getNext(fiber) {
+    console.log('fibering...', fiber.node.type);
     // we need to do sth before get to next
     // what do we want to do?
     // lets first try to build the next fiber while..traversing the tree
@@ -185,16 +208,27 @@ function getNext(fiber) {
 //     this.child = this.parent = this.sibling = null;
 // }
 
-function commitToDom(OperationFiber) {
-    const { node } = OperationFiber;
-    const dom = document.createElement(node.type);
-    let next = OperationFiber.child;
+/**
+ * 
+ * thoughts of state
+ * we know..somehow when we call setState, we will get new react element, lets play a trick here
+ * because we dont know how function component, fiber and state work together, we only know fiber..lets just put a setState in each fiber..
+ * no..so stupid..yes..I want to be stupid
+ */
+
+function commitToDom(fiber) {
+    if (!fiber.dom) {
+        fiber.dom = document.createElement(fiber.node.type);
+    }
+    console.log('..doming', fiber.dom);
+
+    let next = fiber.child;
     while (next) {
         const childDom = commitToDom(next);
-        dom.appendChild(childDom);
+        fiber.dom.appendChild(childDom);
         next = next.sibling; 
     }
-    return dom;
+    return fiber.dom;
 }
 
 // const rootOperationFiber = new OperationFiber('div');
@@ -208,23 +242,32 @@ function commitToDom(OperationFiber) {
 //     container.appendChild(newDom);
 // }
 
+
 const React = {
     createElement,
 }
 
+
+window.currRootFiber = null; // root (so far only 1 root fiber for commiting dom), it can also be updated..
+window.wip = null; // curr
+
 const ReactDOM = {
     render: (vdom, container) => {
         // two manual methods for you to play around
-        window.rootFiber = {
+        const rootFiber = {
             node: vdom,
             child: null,
             sibling: null,
             parent: null,
         };
-        window.nextWork = getNext;
+        window.rootFiber = rootFiber; 
+        window.currRootFiber = rootFiber; // for commit to dom
+        window.wip = rootFiber; // for iterating, so you can keep wip = getNext(wip);
+        window.getNext = getNext;
         window.commitToDom = () => {
-            container.appendChild(commitToDom(window.rootFiber));
-        };
+            // always commit from current root fiber
+            container.appendChild(commitToDom(window.currRootFiber));
+        }
     },
 }
 export {
