@@ -4,25 +4,24 @@
 import { React, ReactDOM } from './MyReact';
 
 
-function Hello() {
-  return <div><a /></div>;
+function List(props) {
+  return (
+    <ol>
+      <li></li>
+      <li></li>
+    </ol>
+  );
   // essentially it is function Hello() { return React.createElement('div', , React.createElement('a'))}
 }
 
-const element = <Hello />;
 
-window.ele = element;
-console.log(element);
-// ReactDOM.render(
-//   (
-//     <div>
-//       <ol>
-//         <li></li>
-//         <li></li>
-//       </ol>
-//       <span></span>
-//     </div>
-//   ),
-//   document.getElementById('root')
-// );
+ReactDOM.render(
+  (
+    <div>
+      <List />
+      <span></span>
+    </div>
+  ),
+  document.getElementById('root')
+);
 

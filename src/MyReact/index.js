@@ -126,8 +126,8 @@ const _rootFiber = {
 
 // [2]
 // only deal with first level of children
-const dealWithChildren = (rootFiber) => {
-    if (rootFiber.node.props.children.length !== 0) {
+const dealWithChildren = (rootFiber, children) => {
+    if (children.length !== 0) {
         // fiber generator
         const getChildFiberTemplate = (node) => {
             const newFiber = {
@@ -137,18 +137,9 @@ const dealWithChildren = (rootFiber) => {
                 node, 
             };
 
-            // fake setState as I dont know how to link state to fiber yet, I just attach it
-            newFiber.setState = () => {
-                // update the root for later dom commit
-                window.currRootFiber = newFiber;
-                // prepare for fiber parsing
-                window.wip = newFiber
-            };
 
             return newFiber;
         };
-
-        const children = rootFiber.node.props.children;
 
         let prevSibling = getChildFiberTemplate(children[0]);
         rootFiber.child = prevSibling;
@@ -169,7 +160,18 @@ function getNext(fiber) {
     // what is the tree? what is we are trying to build incrementally?
     // at this moment, tree is the vDom which we probably immediate have snap1, snap2
     // we are trying build the diff incrementally? I might be wrong..or I might be right
-    dealWithChildren(fiber);
+
+    // to deal with functional component which does not have children props by default..actually
+    // actually it does not have vdom (the node), we need to calculate it
+    if (fiber.node.type instanceof Function) {
+        const children = fiber.node.type(fiber.node.props);
+        fiber.node = children;
+        // function component is special
+        fiber.hooks = [];
+    } 
+
+    dealWithChildren(fiber, fiber.node.props.children);
+
 
     // try look down
     if (fiber.child) {
