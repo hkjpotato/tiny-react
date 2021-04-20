@@ -1,3 +1,11 @@
+# What it is trying to do?
+
+Starting from the root problem: UI tree updating, let's assume we are the react creator, and try to solve the problem from scratch/reverse engineering.
+
+Can we come up with a solution somehow similar to the current React source code?
+
+
+-----------------------
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
