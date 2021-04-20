@@ -234,25 +234,35 @@ function getNext(fiber) {
 
 const commitDomRoot = null;
 
-function commitToDom(fiber) {
+function commitToDom(fiber, container) {
     // not every fiber has dom!!!!!!
+    // remember we use "node" to represent the only operation "create"
+    // if we encouter an operation node with type = function...that means the operation is to... 
     if (fiber.node.type instanceof Function) {
         // this is not a dom fiber
     } else {
         // this is a dom fiber
+        if (!fiber.dom) {
+            fiber.dom = document.createElement(fiber.node.type);
+        }
     }
-    // if (!fiber.dom) {
-    //     fiber.dom = document.createElement(fiber.node.type);
-    // }
-    // console.log('..doming', fiber.dom);
 
-    // let next = fiber.child;
-    // while (next) {
-    //     const childDom = commitToDom(next);
-    //     fiber.dom.appendChild(childDom);
-    //     next = next.sibling; 
-    // }
-    // return fiber.dom;
+    // mount its child
+    if (fiber.child) {
+        commitToDom(fiber.child, fiber.dom ? fiber.dom : container);
+    }
+
+    // mount itself
+
+    if (fiber.dom) {
+        console.log('doing a mount on ', fiber, container);
+        container.appendChild(fiber.dom);
+    }
+
+    // mount its sibling
+    if (fiber.sibling) {
+        commitToDom(fiber.sibling, container);
+    }
 }
 
 // const rootOperationFiber = new OperationFiber('div');
@@ -290,7 +300,7 @@ const ReactDOM = {
         window.getNext = getNext;
         window.commitToDom = () => {
             // always commit from current root fiber
-            container.appendChild(commitToDom(window.currRootFiber));
+            commitToDom(window.currRootFiber, container);
         }
     },
 }
