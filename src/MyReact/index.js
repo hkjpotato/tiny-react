@@ -170,13 +170,22 @@ function getNext(fiber) {
     // actually it does not have vdom (the node), we need to calculate it
     if (fiber.node.type instanceof Function) {
         const children = fiber.node.type(fiber.node.props);
-        fiber.node = children; // this is not good
+        // fiber.node = children; // this is not good
+        // so far our fiber is like { node: vdom , directions }, thus overriding vdom the 'node' will erase the context
+        // we need a separate place to store the vdom, even the previous vdom so that we can keep track of the change
+        // { node: vdom, directions, dom }
+        // the question is: if I dont unwrap the functional component..how can I make sure it is generic enough to continue the getNext?
+        // actually..the generic part is the vdom regardless of the type, I only need a tree node of { type, props { children } } to build fiber
+        // the original missing part is in commit phase I always build a dom towards a fiber..but not every fiber has dom related to it
+
+
         // function component is special
         fiber.hooks = [];
-    } 
+        dealWithChildren(fiber, [children]);
 
-    dealWithChildren(fiber, fiber.node.props.children);
-
+    } else {
+        dealWithChildren(fiber, fiber.node.props.children);
+    }
 
     // try look down
     if (fiber.child) {
@@ -223,19 +232,27 @@ function getNext(fiber) {
  * no..so stupid..yes..I want to be stupid
  */
 
-function commitToDom(fiber) {
-    if (!fiber.dom) {
-        fiber.dom = document.createElement(fiber.node.type);
-    }
-    console.log('..doming', fiber.dom);
+const commitDomRoot = null;
 
-    let next = fiber.child;
-    while (next) {
-        const childDom = commitToDom(next);
-        fiber.dom.appendChild(childDom);
-        next = next.sibling; 
+function commitToDom(fiber) {
+    // not every fiber has dom!!!!!!
+    if (fiber.node.type instanceof Function) {
+        // this is not a dom fiber
+    } else {
+        // this is a dom fiber
     }
-    return fiber.dom;
+    // if (!fiber.dom) {
+    //     fiber.dom = document.createElement(fiber.node.type);
+    // }
+    // console.log('..doming', fiber.dom);
+
+    // let next = fiber.child;
+    // while (next) {
+    //     const childDom = commitToDom(next);
+    //     fiber.dom.appendChild(childDom);
+    //     next = next.sibling; 
+    // }
+    // return fiber.dom;
 }
 
 // const rootOperationFiber = new OperationFiber('div');
