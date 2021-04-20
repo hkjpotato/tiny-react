@@ -8,11 +8,13 @@ import { unstable_batchedUpdates } from "react-dom";
  * @param  {...any} children 
  */
 function createElement(type, props, ...children) {
+    // naive accept single array children
+    const childrenProps =  Array.isArray(children[0]) ? children[0] : children; 
     return {
         type,
         props: {
             ...props,
-            children,
+            children: childrenProps,
         },
     }
 }
@@ -213,6 +215,8 @@ const dealWithChildren = (rootFiber, children) => {
                 // same vdom
                 prevSibling.sibling.effectTag = 'KEEP';
             }
+            // must update to current node!!
+            prevSibling.sibling.node =  children[i];
         } else {
             // new vdom, new fiber
             prevSibling.sibling = {
@@ -366,8 +370,23 @@ function commitToDom(fiber) {
 //     container.appendChild(newDom);
 // }
 
+let state = 2;
 
 const React = {
+    useState: () => {
+        // super setState 
+
+        const setState = () => {
+            console.log('=>setState called')
+            // 1. return state + 2
+            state += 2
+            // 2. to trigger re-render, update WIP to the functional component fiber
+            window.wip = window.currRootFiber; // hard-coded, try to start again
+        };
+        // 2. to trigger re-render, update WIP to the functional component fiber
+        window.wip = window.rootFiber.child; // hard-coded
+        return [state, setState];
+    },
     createElement,
 }
 

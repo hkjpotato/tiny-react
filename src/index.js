@@ -3,12 +3,15 @@
 
 import { React, ReactDOM } from './MyReact';
 
-
 function List(props) {
+  const [state, setState] = React.useState();
+  const children = new Array(state).fill(0).map(i => <li key={i}></li>)
+  // expose to window, let window event trigger state change
+  window.triggerSetState = () => setState();
+
   return (
     <ol>
-      <li></li>
-      <li></li>
+      {children}
     </ol>
   );
   // essentially it is function Hello() { return React.createElement('div', , React.createElement('a'))}
