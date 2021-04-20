@@ -98,6 +98,10 @@ function render(element, container) {
  * when we have new vDom -> as part of the reconciliation! (at least for now)
  * 
  * so reconciliation here is not just to compare diff but generate diff!
+ * 
+ * this remind me of why it is said the idea of "template" in Vue can help it optimize its performance
+ * in react, everything is generated in runtime <- during the reconciliation process 
+ * I am not 100% sure if my understanding is correct, but I somehow sense it...
  * **/
 
 // [1]
