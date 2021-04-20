@@ -82,6 +82,11 @@ function render(element, container) {
  * now the question is:...how the state is related to the fiber, how we know which dom is bound to a fiber? 
  * it seems the first is how to deal with functional component
  * 
+ * wait I notice a problem, if fiber and react component/element is 1 to 1 mapping, unwrapping a function component to its dom structure 
+ * will lose the "component" type in rendering phase 
+ * https://indepth.dev/posts/1007/the-how-and-why-on-reacts-usage-of-linked-list-in-fiber-to-walk-the-components-tree
+ * https://indepth.dev/posts/1008/inside-fiber-in-depth-overview-of-the-new-reconciliation-algorithm-in-react
+ * 
  * **/
 
 // [1]
@@ -165,7 +170,7 @@ function getNext(fiber) {
     // actually it does not have vdom (the node), we need to calculate it
     if (fiber.node.type instanceof Function) {
         const children = fiber.node.type(fiber.node.props);
-        fiber.node = children;
+        fiber.node = children; // this is not good
         // function component is special
         fiber.hooks = [];
     } 
