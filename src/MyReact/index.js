@@ -234,34 +234,41 @@ function getNext(fiber) {
 
 const commitDomRoot = null;
 
-function commitToDom(fiber, container) {
+function commitToDom(fiber) {
     // not every fiber has dom!!!!!!
     // remember we use "node" to represent the only operation "create"
     // if we encouter an operation node with type = function...that means the operation is to... 
+    // do we need to always pass in the 'container' aka the host? since we have fiber linkedlist Node
+    // it should be have to find its parent dom somehow, right?
+    // another thing is for a functional component will it be more convenient to keep track of a dom base as well
     if (fiber.node.type instanceof Function) {
         // this is not a dom fiber
     } else {
         // this is a dom fiber
-        if (!fiber.dom) {
+        if (!fiber.dom) { // before deep dive, make sure dom is created
             fiber.dom = document.createElement(fiber.node.type);
         }
     }
 
     // mount its child
     if (fiber.child) {
-        commitToDom(fiber.child, fiber.dom ? fiber.dom : container);
+        commitToDom(fiber.child);
     }
 
     // mount itself
-
     if (fiber.dom) {
-        console.log('doing a mount on ', fiber, container);
-        container.appendChild(fiber.dom);
+        // self searching for parent dom
+        let parentFiber = fiber.parent;
+        while (!parentFiber.dom) {
+            parentFiber = parentFiber.parent;
+        }
+        console.log('doing a mount on ', fiber, parentFiber);
+        parentFiber.dom.appendChild(fiber.dom);
     }
 
     // mount its sibling
     if (fiber.sibling) {
-        commitToDom(fiber.sibling, container);
+        commitToDom(fiber.sibling);
     }
 }
 
@@ -287,20 +294,26 @@ window.wip = null; // curr
 
 const ReactDOM = {
     render: (vdom, container) => {
+        const virtualHostFiber = {
+            dom: container,
+        }
         // two manual methods for you to play around
         const rootFiber = {
             node: vdom,
             child: null,
             sibling: null,
-            parent: null,
+            parent: virtualHostFiber,
         };
+
+        virtualHostFiber.child = rootFiber;
+
         window.rootFiber = rootFiber; 
         window.currRootFiber = rootFiber; // for commit to dom
         window.wip = rootFiber; // for iterating, so you can keep wip = getNext(wip);
         window.getNext = getNext;
         window.commitToDom = () => {
             // always commit from current root fiber
-            commitToDom(window.currRootFiber, container);
+            commitToDom(window.currRootFiber);
         }
     },
 }
