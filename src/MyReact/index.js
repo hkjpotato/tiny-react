@@ -131,6 +131,17 @@ const _rootFiber = {
 
 // [2]
 // only deal with first level of children
+// think more: fiber is not just a "node" holder + direction
+// it should match a unit of work: the diff work
+// where the diff comes from? back to the original question on
+/**
+ * ah how setState trickers re-rendering?
+ * we know setState and render will reset wip so as to start scheduling new rendering work
+ * but before that we need to get the new virtual dom so I can somehow update my diff working tree (fiber) based on the diff
+ * 
+ * basically when deal with children, I need to see different children
+ * 讲真我最困惑的就是你特么什么时候得到新的children或者vdom
+ */
 const dealWithChildren = (rootFiber, children) => {
     if (children.length !== 0) {
         // fiber generator
