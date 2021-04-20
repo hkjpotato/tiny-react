@@ -1,3 +1,4 @@
+import { unstable_batchedUpdates } from "react-dom";
 
 
 /**
@@ -159,31 +160,73 @@ const _rootFiber = {
  * =====
  * !important: " when deal with children, I need to see different children" -> yes you can, because the new children is built in this process!!
  * see [6]
+ * time to do more, you are not just creating fiber node for child, you need the diff!!
  */
 const dealWithChildren = (rootFiber, children) => {
-    if (children.length !== 0) {
-        // fiber generator
-        const getChildFiberTemplate = (node) => {
-            const newFiber = {
-                parent: rootFiber, // known parent
-                sibling: null,
-                child: null,
-                node, 
-            };
+    // if (children.length !== 0) {
+    //     // fiber generator
+    //     const getChildFiberTemplate = (node) => {
+    //         const newFiber = {
+    //             parent: rootFiber, // known parent
+    //             sibling: null,
+    //             child: null,
+    //             node, 
+    //         };
 
 
-            return newFiber;
-        };
+    //         return newFiber;
+    //     };
 
-        let prevSibling = getChildFiberTemplate(children[0]);
-        rootFiber.child = prevSibling;
+    //     let prevSibling = getChildFiberTemplate(children[0]);
+    //     rootFiber.child = prevSibling;
 
-        for (var i = 1; i < children.length; i++) {
-            const curr = getChildFiberTemplate(children[i]);
-            prevSibling.sibling = curr;
-            prevSibling = curr;
-        }
+    //     for (var i = 1; i < children.length; i++) {
+    //         const curr = getChildFiberTemplate(children[i]);
+    //         prevSibling.sibling = curr;
+    //         prevSibling = curr;
+    //     }
+    // }
+
+    // we are not just making the fiber.. we are here to generate the diff
+    // diff between old children vs new children
+    // it would be hard for now to directly compare rootFiber.node.props.children vs the new passed in children
+    // because rootFiber might be a functional component fiber and its node might not have children
+    // it is better to rely on a generic data type fiber where it always have child attribute
+    const oldChildren = [];
+    let oldChildFiber = rootFiber.child;
+    while (oldChildFiber) {
+        oldChildren.push(oldChildFiber.node);
+        oldChildFiber = oldChildFiber.sibling;
     }
+
+    // I was thinking of creating a new fiber, but then I realize maybe I should not
+    // vdom is immutable, fiber is muttable.
+    // lets build new child list
+    const dummyFiber = { sibling: rootFiber.child }; // -1
+    let prevSibling = dummyFiber; // we need prevSibling to do "prev.sibling = new" work
+    // lets simply it so that you can only add new child or change 'type' of existing child
+    for (let i = 0; i < children.length; i++) {
+        if (oldChildren[i]) {
+            if (oldChildren[i].type !== children[i].type) {
+                prevSibling.sibling.effectTag = 'UPDATE'; 
+            } else {
+                // same vdom
+                prevSibling.sibling.effectTag = 'KEEP';
+            }
+        } else {
+            // new vdom, new fiber
+            prevSibling.sibling = {
+                node: children[i],
+                parent: rootFiber,
+                child: null,
+                sibling: null,
+                effectTag: 'CREATE',
+            };
+        }
+        prevSibling = prevSibling.sibling;
+    }
+    // switch to new child list
+    rootFiber.child = dummyFiber.sibling;
 }
 
 function getNext(fiber) {
@@ -198,6 +241,7 @@ function getNext(fiber) {
     // to deal with functional component which does not have children props by default..actually
     // actually it does not have vdom (the node), we need to calculate it
     if (fiber.node.type instanceof Function) {
+        // [6]this is where we generate the diff!! a new children vdom is generated here
         const children = fiber.node.type(fiber.node.props);
         // fiber.node = children; // this is not good
         // so far our fiber is like { node: vdom , directions }, thus overriding vdom the 'node' will erase the context
@@ -286,13 +330,23 @@ function commitToDom(fiber) {
 
     // mount itself
     if (fiber.dom) {
-        // self searching for parent dom
-        let parentFiber = fiber.parent;
-        while (!parentFiber.dom) {
-            parentFiber = parentFiber.parent;
+        if (fiber.effectTag === 'KEEP') {
+            console.log('just keep it');
+        } else {
+            // self searching for parent dom
+            let parentFiber = fiber.parent;
+            while (!parentFiber.dom) {
+                parentFiber = parentFiber.parent;
+            }
+
+            if (fiber.effectTag === 'CREATE') {
+                console.log('create a dom on ', fiber.dom, parentFiber.dom);
+                parentFiber.dom.appendChild(fiber.dom);
+            } else {
+                let updateTime = +fiber.dom.dataset.updateTime || 0;
+                fiber.dom.dataset.updateTime = updateTime + 1;
+            }
         }
-        console.log('doing a mount on ', fiber, parentFiber);
-        parentFiber.dom.appendChild(fiber.dom);
     }
 
     // mount its sibling
@@ -332,6 +386,7 @@ const ReactDOM = {
             child: null,
             sibling: null,
             parent: virtualHostFiber,
+            effectTag: 'CREATE',
         };
 
         virtualHostFiber.child = rootFiber;
