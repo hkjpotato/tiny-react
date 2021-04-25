@@ -112,6 +112,11 @@ function render(element, container) {
  * how to localize a hook (useState) -> turns out a global variable is used as a hub ?!
  * 
  * first lets fix a bug..lets restart..calm down
+ * what do we want..we want that when setState is called, we can start reconcile process again from the top related root X
+ * we want to regenerate the fiber tree from X, after rendering phase in commit phase we want to re commit from somewhere
+ * 
+ * one thing I dont know how to handle is, when writing useState and setState, how to notify wip: hey track from here?
+ * originally, I am thinking attaching setState to the existing fiber, so somehow, setState knows the existing fiber
  * 
  * **/
 
@@ -265,7 +270,7 @@ function getNext(fiber) {
 
 
         // function component is special
-        fiber.hooks = [];
+        fiber.hooks = []; // somehow make setState here so it is awared of the current fiber?
         dealWithChildren(fiber, [children]);
 
     } else {
@@ -432,6 +437,8 @@ const ReactDOM = {
         window.getNext = getNext;
         window.commitToDom = () => {
             // always commit from current root fiber
+            // currRootFiber is a root for us to traverse it should remain unchanged during wip =  getNext(wip)
+            // so that in commit phase we know where to start
             commitToDom(window.currRootFiber);
         }
     },
