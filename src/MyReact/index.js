@@ -105,6 +105,14 @@ function render(element, container) {
  * this remind me of why it is said the idea of "template" in Vue can help it optimize its performance
  * in react, everything is generated in runtime <- during the reconciliation process 
  * I am not 100% sure if my understanding is correct, but I somehow sense it...
+ * 
+ * 
+ * [7] in the idea of hooks and state:
+ * one thing I was particular confused is: how a function call of useState can somehow link to the component itself
+ * how to localize a hook (useState) -> turns out a global variable is used as a hub ?!
+ * 
+ * first lets fix a bug..lets restart..calm down
+ * 
  * **/
 
 // [1]
@@ -384,7 +392,15 @@ const React = {
             window.wip = window.currRootFiber; // hard-coded, try to start again
         };
         // 2. to trigger re-render, update WIP to the functional component fiber
-        window.wip = window.rootFiber.child; // hard-coded
+        // window.wip = window.rootFiber.child; // hard-coded (cause I dont know how this is connected to the fiber who calls it)
+        // this is a bug, why you want to reset wip inside useState..does not make sense.
+
+        // in the current rendering phase, where you generate the fiber tree
+        // you will call wip = getNext(wip) to 1. generate fiber 2. generate fiber with nav 3. nav
+        // nav is done by wip = getNext(wip) to move to next, in this process you should not reset the nav 
+        // useState will be called in getNext where functionComp.type(props) => children
+
+
         return [state, setState];
     },
     createElement,
