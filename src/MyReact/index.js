@@ -118,6 +118,13 @@ function render(element, container) {
  * one thing I dont know how to handle is, when writing useState and setState, how to notify wip: hey track from here?
  * originally, I am thinking attaching setState to the existing fiber, so somehow, setState knows the existing fiber
  * 
+ * fiber.setState = () => {
+ *    wip = fiber;
+ * }
+ * 
+ * to trigger, do 1. targetFiber = rootFiber.child 2. targetFiber.setState
+ * 
+ * but this is not necessary, think about when useState will be called, it is in the reconcile progress, at that time we know who is wip
  * **/
 
 // [1]
@@ -270,7 +277,7 @@ function getNext(fiber) {
 
 
         // function component is special
-        fiber.hooks = []; // somehow make setState here so it is awared of the current fiber?
+        // fiber.hooks = []; // somehow make setState here so it is awared of the current fiber?
         dealWithChildren(fiber, [children]);
 
     } else {
@@ -383,31 +390,28 @@ function commitToDom(fiber) {
 //     container.appendChild(newDom);
 // }
 
-let state = 2;
+function useState(init) {
+    // when useState is called, wip must be the current functional component
+    // this is determined by getNext(wip) if (wip is function) => call(function) => call(useState)
+    const currFiber = window.wip; // a local variable to remember the functional component fiber
+    // currFiber.state = init;
+    if (typeof currFiber.state === 'undefined') {
+        currFiber.state = init;
+    }
+
+    const setState = (nextState) => {
+        console.log('setState is called...');
+        currFiber.state = nextState; // first reset the state
+        window.wip = currFiber; // reset wip to functional fiber
+        // then when getNext is called, it should start from functional fiber
+        // it will then call useState again and get latest state
+    }
+
+    return [currFiber.state, setState];
+}
 
 const React = {
-    useState: () => {
-        // super setState 
-
-        const setState = () => {
-            console.log('=>setState called')
-            // 1. return state + 2
-            state += 2
-            // 2. to trigger re-render, update WIP to the functional component fiber
-            window.wip = window.currRootFiber; // hard-coded, try to start again
-        };
-        // 2. to trigger re-render, update WIP to the functional component fiber
-        // window.wip = window.rootFiber.child; // hard-coded (cause I dont know how this is connected to the fiber who calls it)
-        // this is a bug, why you want to reset wip inside useState..does not make sense.
-
-        // in the current rendering phase, where you generate the fiber tree
-        // you will call wip = getNext(wip) to 1. generate fiber 2. generate fiber with nav 3. nav
-        // nav is done by wip = getNext(wip) to move to next, in this process you should not reset the nav 
-        // useState will be called in getNext where functionComp.type(props) => children
-
-
-        return [state, setState];
-    },
+    useState,
     createElement,
 }
 
