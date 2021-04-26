@@ -125,6 +125,9 @@ function render(element, container) {
  * to trigger, do 1. targetFiber = rootFiber.child 2. targetFiber.setState
  * 
  * but this is not necessary, think about when useState will be called, it is in the reconcile progress, at that time we know who is wip
+ * 
+ * another thing is useState might be called multiple times, we cant just set `state` on fiber itself 
+ * as it may have multiple states
  * **/
 
 // [1]
@@ -265,6 +268,9 @@ function getNext(fiber) {
     // to deal with functional component which does not have children props by default..actually
     // actually it does not have vdom (the node), we need to calculate it
     if (fiber.node.type instanceof Function) {
+
+
+
         // [6]this is where we generate the diff!! a new children vdom is generated here
         const children = fiber.node.type(fiber.node.props);
         // fiber.node = children; // this is not good
@@ -406,7 +412,32 @@ function useState(init) {
         // then when getNext is called, it should start from functional fiber
         // it will then call useState again and get latest state
     }
-
+    // 我们早晚需要重新写 现在我们容易出现一个迷思，分不清当下和以前 fiber自己没有迭代？？
+    /**
+     * 我们正在useState这个scope里的currFiber. 在setState被叫的那时候
+     * 其实已经是prevFiber了 你现在对于prevFiber 直接做了一件事 就是改状态
+     * 然后 又把这个处理过的fiber 交给了wip
+     * 
+     * function useState() {
+     *    prevHook = getPrevHook(currFiber);
+     *    // always build new hook
+     *    currHook = parsePrevious(prevHook); // a progress of checking [...next]
+     *    
+     *
+     *    setNext = (next) => {
+     *      currHook.push(next);
+     *      global_next_work = {
+     *         reset_to_top
+     *      }
+     *      ...nextTime when it is called by useState, you need to access it from prevHook
+     *    } 
+     * 
+     *    currFiber.hooks.push(currHook);
+     * 
+     *    return [ currHook, setNext ];
+     * }
+     * 
+     */
     return [currFiber.state, setState];
 }
 
