@@ -256,6 +256,9 @@ const dealWithChildren = (rootFiber, children) => {
     rootFiber.child = dummyFiber.sibling;
 }
 
+
+let hookIndex = 0;
+let currHooks = [];
 function getNext(fiber) {
     console.log('fibering...', fiber.node.type);
     // we need to do sth before get to next
@@ -269,10 +272,12 @@ function getNext(fiber) {
     // actually it does not have vdom (the node), we need to calculate it
     if (fiber.node.type instanceof Function) {
 
-
-
+        // temporary place holder for the current hooks for this functional component
+        hookIndex = 0;
+        currHooks = [];
         // [6]this is where we generate the diff!! a new children vdom is generated here
         const children = fiber.node.type(fiber.node.props);
+        fiber.hooks = currHooks;
         // fiber.node = children; // this is not good
         // so far our fiber is like { node: vdom , directions }, thus overriding vdom the 'node' will erase the context
         // we need a separate place to store the vdom, even the previous vdom so that we can keep track of the change
@@ -280,10 +285,7 @@ function getNext(fiber) {
         // the question is: if I dont unwrap the functional component..how can I make sure it is generic enough to continue the getNext?
         // actually..the generic part is the vdom regardless of the type, I only need a tree node of { type, props { children } } to build fiber
         // the original missing part is in commit phase I always build a dom towards a fiber..but not every fiber has dom related to it
-
-
         // function component is special
-        // fiber.hooks = []; // somehow make setState here so it is awared of the current fiber?
         dealWithChildren(fiber, [children]);
 
     } else {
@@ -400,14 +402,31 @@ function useState(init) {
     // when useState is called, wip must be the current functional component
     // this is determined by getNext(wip) if (wip is function) => call(function) => call(useState)
     const currFiber = window.wip; // a local variable to remember the functional component fiber
-    // currFiber.state = init;
-    if (typeof currFiber.state === 'undefined') {
-        currFiber.state = init;
+
+    const oldHook = currFiber.hooks && currFiber.hooks[hookIndex];
+
+    const newHook = {
+        state: init,
+        queue: [],
+    };
+
+
+    if(oldHook) {
+        let oldState = oldHook.state;
+        // in reality there must be some complicate parsing
+        if (oldHook.queue) {
+            // oldState = oldState + some actions queued on it
+            oldState = oldHook.queue[oldHook.queue.length - 1];
+        }
+        // use old state if it has
+        newHook.state = oldState;
     }
+
 
     const setState = (nextState) => {
         console.log('setState is called...');
-        currFiber.state = nextState; // first reset the state
+        newHook.queue.push(nextState);
+
         window.wip = currFiber; // reset wip to functional fiber
         // then when getNext is called, it should start from functional fiber
         // it will then call useState again and get latest state
@@ -438,7 +457,10 @@ function useState(init) {
      * }
      * 
      */
-    return [currFiber.state, setState];
+    // bad bad global
+    currHooks.push(newHook);
+    hookIndex++;
+    return [newHook.state, setState];
 }
 
 const React = {
