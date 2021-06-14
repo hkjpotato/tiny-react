@@ -424,12 +424,13 @@ function useState(init) {
 
 
     const setState = (nextState) => {
-        console.log('setState is called...');
+        console.log('setState is called...', currFiber.node.type);
         newHook.queue.push(nextState);
 
         window.wip = currFiber; // reset wip to functional fiber
         // then when getNext is called, it should start from functional fiber
         // it will then call useState again and get latest state
+        window.currRootFiber = currFiber;
     }
     // 我们早晚需要重新写 现在我们容易出现一个迷思，分不清当下和以前 fiber自己没有迭代？？
     /**
