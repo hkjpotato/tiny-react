@@ -1,23 +1,24 @@
 # What it is trying to do?
 
 Starting from the root problem: UI tree updating, let's assume we are the react creator, and try to solve the problem from scratch/reverse engineering.
-Can we come up with a solution somehow similar to the current React source code?
+Can we come up with a solution somehow similar to the current React source code? --- see update below
 
 
-# update on the end of 2021
-I do not have time to polish the code this year, was dragged to some backend stuffs. I will find some time next year.
+## Update on the end of 2021
+I do not have time to polish the code this year, as I was dragged to some backend stuffs. You can still get hints from the early commits messages, on what fiber is, why using linklist and why recursion should be avoided.
 
-I do want to share something interesting I learned, from the discussion within other open source contributors, TC39 member, and actually from some designs of AWS backend system :) 
+I do want to share something interesting I learn, from the discussion within other open source contributors, TC39 member... and actually from some designs of the AWS backend system (fun fact: design ideas on the frontend today can root back in the backend).
 
-React is not just a UI library. Actually, the most important/challenging task is not to commiting to dom, but to find a smart and efficient way to calculate a diff in output, based on a diff input in another domain.
+Today, React is not just a UI framework. Perhaps, the most important and challenging task is not about commiting data to the doms, but to find a smart and efficient way to __calculate a diff in the output, based on a diff in the input__.
 
-If you look React from the way to it computes the diff, it does share some similarities with a build system like typescript compiler: as they both need to do one job, which is "incremental computation".
+If you look React from the way to it computes the diff, it does share some similarities with a build system like typescript compiler: as they both need to do one job: __incremental computation__.
 
 
 https://user-images.githubusercontent.com/9324418/142946615-5fcdffa3-ff8b-42bb-be07-ac2e940bd5ba.mov
 
-Special thanks to inspiration from @Lucifier129
-His sharing:https://mp.weixin.qq.com/s/Zg-snOR7BG6l6DojqzO3Yg
+Special thanks to the inspiration & discussion & guidance from [@Lucifier129](https://github.com/Lucifier129)
+
+His sharing https://mp.weixin.qq.com/s/Zg-snOR7BG6l6DojqzO3Yg
 
 Build Systems à la Carte: Theory and Practice
 https://www.microsoft.com/en-us/research/uploads/prod/2020/04/build-systems-jfp.pdf
@@ -37,4 +38,4 @@ https://twitter.com/mweststrate/status/1261369870152871937?s=20
 
 ---
 
-This is just a fun world
+This is just a world of fun and magic :)
