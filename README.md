@@ -1,78 +1,40 @@
 # What it is trying to do?
 
 Starting from the root problem: UI tree updating, let's assume we are the react creator, and try to solve the problem from scratch/reverse engineering.
-
 Can we come up with a solution somehow similar to the current React source code?
 
 
------------------------
-# Getting Started with Create React App
+# update on the end of 2021
+I do not have time to polish the code this year, was dragged to some backend stuffs. I will find some time next year.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+I do want to share something interesting I learned, from the discussion within other open source contributors, TC39 member, and actually from some designs of AWS backend system :) 
 
-## Available Scripts
+React is not just a UI library. Actually, the most important/challenging task is not to commiting to dom, but to find a smart and efficient way to calculate a diff in output, based on a diff input in another domain.
 
-In the project directory, you can run:
+If you look React from the way to it computes the diff, it does share some similarities with a build system like typescript compiler: as they both need to do one job, which is "incremental computation".
 
-### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+https://user-images.githubusercontent.com/9324418/142946615-5fcdffa3-ff8b-42bb-be07-ac2e940bd5ba.mov
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Special thanks to inspiration from @Lucifier129
+His sharing:https://mp.weixin.qq.com/s/Zg-snOR7BG6l6DojqzO3Yg
 
-### `npm test`
+Build Systems à la Carte: Theory and Practice
+https://www.microsoft.com/en-us/research/uploads/prod/2020/04/build-systems-jfp.pdf
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Chris Penner: React is just a specialized composable build system!
+https://twitter.com/chrislpenner/status/1374159447577161731
 
-### `npm run build`
+Anders Hejlsberg on Modern Compiler Construction
+https://www.youtube.com/watch?v=wSdV1M7n4gQ
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Recoil is an experimental state management library for React apps.
+https://github.com/facebookexperimental/Recoil
+https://github.com/facebookexperimental/Recoil/issues/1020
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Michel Weststrate earlier tweet about recoil vs mobx vs redux
+https://twitter.com/mweststrate/status/1261369870152871937?s=20
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This is just a fun world
