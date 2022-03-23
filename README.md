@@ -7,7 +7,7 @@ Can we come up with a solution somehow similar to the current React source code?
 ## Update on the end of 2021
 I do not have time to polish the code this year, as I was dragged to some backend stuffs. You can still get hints from the early commits messages, on what fiber is, why using linklist and why recursion should be avoided.
 
-I do want to share something interesting I learn, from the discussion within other open source contributors, TC39 member... and actually from some designs of the AWS backend system (fun fact: design ideas on the frontend today can root back in the backend).
+I do want to share something interesting I learn, from the discussion with other open source contributors.
 
 Today, React is not just a UI framework. Perhaps, the most important and challenging task is not about commiting data to the doms, but to find a smart and efficient way to __calculate a diff in the output, based on a diff in the input__.
 
